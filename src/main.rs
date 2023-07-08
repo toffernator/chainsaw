@@ -1,44 +1,28 @@
-use git2::Repository;
+use git2::{Repository, BranchType, Branch};
 
-const REPOSITORY_PATH: &str = "../../../Repos/QualityTool/";
+const REPOSITORY_PATH: &str = ".";
 const REMOTE: &str = "origin";
-
 fn main() {
     let repository = match Repository::open(REPOSITORY_PATH) {
         Ok(repo) => repo,
         Err(e) => panic!("failed to open: {}", e),
     };
 
-    list_branches(repository)
-}
-
-fn list_branches(repository: Repository) {
-    let branches = match repository.branches(None) {
-        Ok(branches) => branches,
-        Err(e) => panic!("failed to read branches: {}", e),
-    };
-
-    for b in branches {
-        let branch = match b {
-            Ok((branch, _)) => branch,
-            Err(e) => panic!("failed to read branch: {}", e),
-        };
-
-        let name = match branch.name() {
-            Ok(name) => name,
-            Err(e) => panic!("failed to read name: {}", e),
-        };
-
-        match name {
-            Some(n) => println!("Got: {}", n),
-            None => println!("Got no name"),
-        }
+    let orphans = repository.branches(Some(BranchType::Local))
+        .unwrap()
+        .map(|r| r.unwrap().0)
+        .filter(|b| !has_remote(b));
+    
+    for mut o in orphans {
+        println!("deleting {}", o.name().unwrap().unwrap());
+        let _ = o.delete();
     }
 }
 
-fn list_remote_refs(repository: Repository) {
-    let remote = match repository.find_remote(REMOTE) {
-        Ok(remote) => remote,
-        Err(e) => panic!("failed to find origin: {}", e),
-    };
+// Assumes that branch.upstream() only fails when there is no upsteam
+fn has_remote(branch: &Branch) -> bool {
+    match branch.upstream() {
+        Ok(_) => true,
+        Err(_) => false,
+    }
 }
