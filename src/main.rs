@@ -4,16 +4,16 @@ use anyhow::{Context, Result, Error};
 
 #[derive(Parser)]
 struct Cli {
-    // The repository to remove trim
+    /// The repository to trim
     repository: std::path::PathBuf,
     
-    // Show the branches that would be deleted, but do not delete any branches
+    /// Show the branches that would be deleted, but do not delete any branches
     #[arg(short, long, default_value_t = false)]
     dry_run: bool,
 
-    // Auto-accept any prompts
+    /// Auto-accept any prompts
     #[arg(short, long, default_value_t = false)]
-    yes: bool
+    yes: bool 
 }
 
 fn main() -> Result<()> {
@@ -22,12 +22,11 @@ fn main() -> Result<()> {
     let repository = Repository::open(&args.repository)
         .with_context(|| format!("Failed to open repository at {:?}", args.repository))?;
    
-     let orphans: Vec<Branch<'_>> = repository
+     let orphans = repository
          .branches(Some(BranchType::Local))
          .with_context(|| format!("Failed to get local branches for {:?}", args.repository))?
          .map(|r| r.unwrap().0)
-         .filter(|b| !has_remote(b))
-         .collect();
+         .filter(|b| !has_remote(b));
     
     println!("Going to delete:");
     let mut to_delete: Vec<Branch> = Vec::new();
