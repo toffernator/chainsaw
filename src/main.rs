@@ -38,16 +38,18 @@ fn main() -> Result<()> {
         to_delete.push(o)
     }
     println!("Ok? [Yn]");
-    
-    if !args.yes {
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input)?;
 
-        if input.trim().eq_ignore_ascii_case("y") || input.eq("\n") {
-            if !args.dry_run {
-                for mut b in to_delete {
-                    b.delete()?
-                }
+    let mut input = std::string::String::new();
+    if args.yes {
+      input = "y".to_string()
+    } else {
+        std::io::stdin().read_line(&mut input)?;
+    };
+    
+    if input.trim().eq_ignore_ascii_case("y") || input.eq("\n") {
+        if !args.dry_run {
+            for mut b in to_delete {
+                b.delete()?
             }
         }
     }
