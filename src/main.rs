@@ -1,6 +1,9 @@
-use git2::{Repository, BranchType, Branch};
-use clap::Parser;
 use anyhow::{Context, Result, Error};
+use clap::Parser;
+use git2::{Repository, BranchType, Branch};
+use log::{error, warn, info, debug, trace};
+use simplelog::{SimpleLogger, LevelFilter, Config};
+use std::fmt::Display;
 
 #[derive(Parser)]
 struct Cli {
@@ -13,14 +16,40 @@ struct Cli {
 
     /// Auto-accept any prompts
     #[arg(short, long, default_value_t = false)]
-    yes: bool 
+    yes: bool,
+
+    /// trace-level logging
+    #[arg(short, long, default_value_t = false)]
+    verbose: bool
+}
+
+impl Display for Cli {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f, "{{ repository: {:?}, dry_run: {}, yes: {}, verbose: {} }}",
+            self.repository, self.dry_run, self.yes, self.verbose
+        )?;
+        Ok(())
+    }
 }
 
 fn main() -> Result<()> {
     let args = Cli::parse();
 
+    let log_level = if args.verbose {
+        LevelFilter::Trace
+    } else {
+        LevelFilter::Off
+    };
+    SimpleLogger::init(log_level, Config::default())
+        .with_context(|| "Failed to initialize a simple logger")?;
+
+    info!("Executing with the args {}", args);
+
     let repository = Repository::open(&args.repository)
         .with_context(|| format!("Failed to open repository at {:?}", args.repository))?;
+    trace!("Initialized repository at {:?}", args.repository);
+
    
      let orphans = repository
          .branches(Some(BranchType::Local))
@@ -45,6 +74,7 @@ fn main() -> Result<()> {
     } else {
         std::io::stdin().read_line(&mut input)?;
     };
+    trace!("Read input {}", input);
     
     if input.trim().eq_ignore_ascii_case("y") || input.eq("\n") {
         if !args.dry_run {
