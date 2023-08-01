@@ -8,4 +8,8 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.71"
 clap = { version = "4.3.11", features = ["derive"] }
+confy = "0.5.1"
 git2 = "0.17.2"
+log = "0.4.19"
+regex = "1.9.1"
+simplelog = "0.12.1"
